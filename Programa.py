@@ -65,12 +65,14 @@ class AplicativoMesclagemDados:
             # Selecionando apenas as colunas importantes
             resultado = mesclado[['Primeiro Nome', 'Sobrenome', 'Employee ID', 'Badge ID']]
 
-            # Salvando na área de trabalho
-            caminho_area_trabalho = r"C:\Users\vitor\Desktop"
-            nome_arquivo = os.path.join(caminho_area_trabalho, f"dados_mesclados_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx")
-            resultado.to_excel(nome_arquivo, index=False)
+            # Perguntar ao usuário onde deseja salvar o arquivo
+            caminho_salvar = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Arquivos Excel", "*.xlsx")])
+            if not caminho_salvar:
+                messagebox.showwarning("Aviso", "O Arquivo não foi salvo. Selecione um local para salvamento.")
+                return  # Se o usuário cancelar, informa que não salvou o arquivo
 
-            messagebox.showinfo("Sucesso", f"Arquivo salvo em: {nome_arquivo}")
+            resultado.to_excel(caminho_salvar, index=False)
+            messagebox.showinfo("Sucesso", f"Arquivo salvo em: {caminho_salvar}")
 
         except Exception as e:
             messagebox.showerror("Erro", str(e))
