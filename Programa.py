@@ -43,13 +43,13 @@ class AplicativoMesclagemDados:
 
             df1 = pd.read_csv(self.caminho_arquivo1.get(), delimiter=separador, dtype=str)
             if not {'Employee ID', 'Badge ID'}.issubset(df1.columns):
-                messagebox.showerror("Erro", "Planilha1 precisa ter 'Employee ID' e 'Badge ID'")
+                messagebox.showerror("Erro", ".CSV precisa ter 'Employee ID' e 'Badge ID'")
                 return
 
             # Agora carregando o XLSX
             df2 = pd.read_excel(self.caminho_arquivo2.get(), dtype=str)
-            if not {'Nome', 'Employee ID'}.issubset(df2.columns):
-                messagebox.showerror("Erro", "Planilha2 precisa ter 'Nome' e 'Employee ID'")
+            if not {'Nome', 'Login'}.issubset(df2.columns):
+                messagebox.showerror("Erro", ".XLSX precisa ter 'Nome' e 'Employee ID'")
                 return
 
             # Limpando dados para evitar erros
