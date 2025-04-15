@@ -1,0 +1,75 @@
+import tkinter as tk
+from tkinter import filedialog, messagebox
+import pandas as pd
+from datetime import datetime
+import os
+
+class DataMergerApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Data Merger")
+
+        self.file1_path = tk.StringVar()
+        self.file2_path = tk.StringVar()
+
+        tk.Label(root, text="Arquivo RFID (CSV):").pack()
+        tk.Entry(root, textvariable=self.file1_path, width=50).pack()
+        tk.Button(root, text="Selecionar arquivo", command=self.load_file1, width=25).pack()
+        tk.Label(root, text="Planilha (XLSX):").pack()
+        tk.Entry(root, textvariable=self.file2_path, width=50).pack()
+        tk.Button(root, text="Selecionar arquivo", command=self.load_file2, width=25).pack()
+        tk.Button(root, text="Mesclar dados", command=self.process_data).pack()
+
+    def load_file1(self):
+        path = filedialog.askopenfilename(filetypes=[["CSV Files", "*.csv"]])
+        if path: 
+            self.file1_path.set(path)
+    
+    def load_file2(self):
+        path = filedialog.askopenfilename(filetypes=[["Excel Files", "*.xlsx"]])
+        if path:
+            self.file2_path.set(path)
+
+    def process_data(self):
+        with open(self.file1_path.get(), 'r') as file:
+            content = file.readlines()
+            delimiter = ',' if ',' in content[0] else ';'
+
+            # Lê arquivo csv em um DataFrame (df1)
+            # Força os dados a serem tratados em strings (dtype=str)
+            #Verifica se as colunas "Employee ID" e "Badge ID" existem
+            df1 = pd.read_csv(self.file1_path.get(), delimiter=delimiter, dtype=str)
+            if not {'Employee ID', 'Badge ID'}.issubset(df1.columns):
+                messagebox.showerror("Erro", "Arquivo CSV deve conter as colunas 'Employee ID' e 'Badge ID'")
+                return
+            
+            # Lê arquivo Excel em um DataFrame (df2)
+            # Verifica se contém as colunas "Nome" e "Employee ID"
+            df2 = pd.read_excel(self.file2_path.get(), skiprows=1, dtype=str)
+            if not {'Nome', 'Login'}.issubset(df2.columns):
+                messagebox.showerror("Erro", "Planilha deve conter as colunas 'Nome' e 'Login'")
+                return
+            
+            # Remove linhas onde o campo "Nome" está vazio
+            df2 = df2.dropna(subset=['Nome'])
+            
+            # Divide a coluna "Nome" em "First Name" e "Last Name"
+            # Se não houver sobrenome, preenche com uma string vazia ('')
+            df2[['First Name', 'Last Name']] = df2['Nome'].str.split(' ', n=1, expand=True)
+            df2['Last Name'].fillna('', inplace=True)
+
+            # Mescla os dois DataFrame com base na coluna "Employee ID"
+            # Adiciona a coluna "Badge ID" do primeiro DataFrame (df1) ao segundo (df2)
+            merged = pd.merge(df2, df1[['Login', 'Employee ID', 'Badge ID']], on='Login', how='left')
+            result = merged[['First Name', 'Last Name', 'Employee ID', 'Badge ID']]
+
+            # Define caminho fixo de salvamento para a Área de Trabalho
+            # Cria um nome único com data e hora atual
+            desktop_path = r"C:\Users\Arthu\Desktop"
+            filename = os.path.join(desktop_path, f"planilha_completa_com_badgeID_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx")
+
+            # Salva o arquivo Excel sem índice
+            result.to_excel(filename, index=False)
+root=tk.Tk()
+DataMergerApp(root)
+root.mainloop()
