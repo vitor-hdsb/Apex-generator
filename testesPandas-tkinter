@@ -31,9 +31,10 @@ class DataMergerApp:
             self.file2_path.set(path)
 
     def process_data(self):
-        with open(self.file1_path.get(), 'r') as file:
-            content = file.readlines()
-            delimiter = ',' if ',' in content[0] else ';'
+        try:
+            with open(self.file1_path.get(), 'r') as file:
+                content = file.readlines()
+                delimiter = ',' if ',' in content[0] else ';'
 
             # Lê arquivo csv em um DataFrame (df1)
             # Força os dados a serem tratados em strings (dtype=str)
@@ -65,11 +66,20 @@ class DataMergerApp:
 
             # Define caminho fixo de salvamento para a Área de Trabalho
             # Cria um nome único com data e hora atual
-            desktop_path = r"C:\Users\Arthu\Desktop"
-            filename = os.path.join(desktop_path, f"planilha_completa_com_badgeID_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx")
+            desktop_path = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("*.xlsx","Arquivos Excel")], initialfile=f"planilha_completa_com_badgeID_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx")
+            if not desktop_path:
+                messagebox.showwarning("Aviso", "O arquivo não foi salvo. Selecione um local para salvamento.")
+                return # Se o usuário cancelar, informa que não salvo o arquivo
+            
+            # Define o nome do arquivo com data e hora
+            #filename = os.path.join(desktop_path, f"planilha_completa_com_badgeID_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx")
 
             # Salva o arquivo Excel sem índice
-            result.to_excel(filename, index=False)
+            result.to_excel(desktop_path, index=False)
+            messagebox.showinfo("Sucesso", f"Arquivo salvo em: {desktop_path}")
+        except Exception as e:
+            messagebox.showerror("Erro", str(e))
+            
 root=tk.Tk()
 DataMergerApp(root)
 root.mainloop()
