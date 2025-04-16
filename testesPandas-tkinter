@@ -80,6 +80,16 @@ class DataMergerApp:
         except Exception as e:
             messagebox.showerror("Erro", str(e))
             
-root=tk.Tk()
+root = tk.Tk()
+root.withdraw()  # Oculta a janela temporariamente
+
+messagebox.showinfo(
+    "Instruções de Uso",
+    "1. Selecione o arquivo CSV contendo as colunas 'Employee ID' e 'Badge ID'.\n"
+    "2. Selecione a planilha Excel que contenha as colunas 'Nome' e 'Login'.\n"
+    "3. Clique em 'Mesclar dados' para gerar um novo arquivo com as informações combinadas.\n\n"
+    "Observação: A planilha Excel deve ter cabeçalho na segunda linha (linha 2)."
+)
+root.deiconify()  # Exibe a janela principal após o aviso
 DataMergerApp(root)
 root.mainloop()
