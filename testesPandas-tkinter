@@ -6,7 +6,6 @@ from fpdf import FPDF
 from datetime import datetime
 import os
 
-# Classe para criar o PDF de termos
 class PDF(FPDF):
     def header(self):
         self.set_font('Arial', 'B', 14)
@@ -25,7 +24,6 @@ def gerar_pdf_termos(resultados, df1, caminho_saida_pdf):
         employee_id = row['Employee ID']
         data_atual = datetime.now().strftime('%d/%m/%Y')
 
-        # Buscar login no CSV original
         login_info = df1.loc[df1['Employee ID'] == employee_id, 'Login']
         if not login_info.empty:
             login = login_info.values[0]
@@ -52,7 +50,6 @@ def gerar_pdf_termos(resultados, df1, caminho_saida_pdf):
 
     pdf.output(caminho_saida_pdf)
 
-# Classe principal da interface
 class DataMergerApp:
     def __init__(self, root):
         self.root = root
@@ -82,7 +79,6 @@ class DataMergerApp:
             print("Erro ao carregar logo:", str(e))
             tk.Label(root, text="[Logo não carregada]").pack()
 
-        # Layout dos campos
         tk.Label(root, text="Arquivo RFID (CSV):").pack()
         tk.Entry(root, textvariable=self.file1_path, width=60).pack()
         tk.Button(root, text="Selecionar arquivo", command=self.load_file1).pack(pady=5)
@@ -127,7 +123,23 @@ class DataMergerApp:
             merged = pd.merge(df2, df1[['Login', 'Employee ID', 'Badge ID']], on='Login', how='left')
             result = merged[['First Name', 'Last Name', 'Employee ID', 'Badge ID']]
 
-            # Salvar Excel final
+            result = result.rename(columns={'Badge ID': 'Badge #'})
+
+            result['Language'] = 'English'
+            result['Active'] = 'Y'
+            result['Reporting Group'] = 'Associados'
+            result['User group 2'] = ''
+            result['User group 3'] = ''
+            result['User group 4'] = ''
+            result['User group 5'] = ''
+            result['Expiration Date'] = ''
+
+            result = result[
+                ['Employee ID', 'First Name', 'Last Name', 'Badge #', 
+                 'Language', 'Active', 'Reporting Group', 
+                 'User group 2', 'User group 3', 'User group 4', 'User group 5', 'Expiration Date']
+            ]
+
             save_path = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx")], initialfile=f"planilha_completa_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx")
             if not save_path:
                 messagebox.showwarning("Aviso", "Arquivo não foi salvo.")
@@ -135,26 +147,33 @@ class DataMergerApp:
 
             result.to_excel(save_path, index=False)
 
-            # Relatório de erros
             erros = merged[merged['Badge ID'].isna()]
             if not erros.empty:
                 error_path = os.path.splitext(save_path)[0] + "_erros.xlsx"
                 erros.to_excel(error_path, index=False)
 
-            # Gerar termos de consentimento em PDF
             pdf_path = os.path.splitext(save_path)[0] + "_termos.pdf"
             gerar_pdf_termos(result, df1, pdf_path)
+
+            # Gerar o arquivo Instances
+            instance_df = pd.DataFrame({
+                'Instance Name': result['First Name'] + ' ' + result['Last Name'],
+                'Instance Num': result['Employee ID'],
+                'Desc': ''
+            })
+            instance_path = os.path.splitext(save_path)[0] + "_Instances.xlsx"
+            instance_df.to_excel(instance_path, index=False)
 
             messagebox.showinfo(
                 "Concluído",
                 f"Arquivo Excel salvo em:\n{save_path}\n\n"
+                f"Arquivo Instances salvo em:\n{instance_path}\n\n"
                 f"Termo de consentimento salvo em:\n{pdf_path}"
             )
 
         except Exception as e:
             messagebox.showerror("Erro", str(e))
 
-# Inicialização da aplicação
 if __name__ == "__main__":
     root = tk.Tk()
     root.withdraw()
@@ -162,9 +181,9 @@ if __name__ == "__main__":
     messagebox.showinfo(
         "Instruções",
         "1. Selecione o arquivo CSV com 'Employee ID', 'Badge ID' e 'Login'.\n"
-        "2. Selecione o Excel com 'Nome' e 'Login'.\n"
-        "3. Clique em 'Mesclar dados'.\n\n"
-        "OBS: A planilha Excel deve ter o cabeçalho na linha 2."
+        "2. Selecione a planilha Excel com 'Nome' e 'Login'.\n"
+        "3. Clique em 'Mesclar dados' para gerar os arquivos.\n\n"
+        "OBS: A planilha Excel deve ter cabeçalho na linha 2."
     )
     root.deiconify()
     app = DataMergerApp(root)
