@@ -5,6 +5,7 @@ import pandas as pd
 from fpdf import FPDF
 from datetime import datetime
 import os
+import sys
 
 class PDF(FPDF):
     def header(self):
@@ -51,6 +52,15 @@ def gerar_pdf_termos(resultados, df1, caminho_saida_pdf):
     pdf.output(caminho_saida_pdf)
 
 class DataMergerApp:
+    def resource_path(self, relative_path):
+        #obtem o caminho de arquivo absoluto para que ler qualquer arquivo mesmo empacotado em .exe, por exemplo
+        try:
+            base_path = sys._MEIPASS
+        except Exception:
+            base_path = os.path.abspath(".")
+
+        return os.path.join(base_path, relative_path)
+    
     def __init__(self, root):
         self.root = root
         self.root.title("Amazon WHS - Apex Importer")
@@ -58,9 +68,9 @@ class DataMergerApp:
 
         self.file1_path = tk.StringVar()
         self.file2_path = tk.StringVar()
-
+        
         try:
-            logo_path = r"C:\Users\vitor\Desktop\Apex-generator\image.png"
+            logo_path = self.resource_path("image.png")
 
             if not os.path.exists(logo_path):
                 raise FileNotFoundError(f"Logo não encontrada em: {logo_path}")
