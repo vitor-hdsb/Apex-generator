@@ -130,7 +130,7 @@ class DataMergerApp:
             df2[['First Name', 'Last Name']] = df2['Nome'].str.split(' ', n=1, expand=True)
             df2['Last Name'].fillna('', inplace=True)
 
-            merged = pd.merge(df2, df1[['Login', 'Employee ID', 'Badge ID']], on='Login', how='left')
+            merged = pd.merge(df2, df1[['Login', 'Badge ID']], on='Login', how='left')
             result = merged[['First Name', 'Last Name', 'Employee ID', 'Badge ID']]
 
             result = result.rename(columns={'Badge ID': 'Badge #'})
