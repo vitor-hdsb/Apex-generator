@@ -71,7 +71,7 @@ class DataMergerApp:
                 logo_image = logo_image.resize((200, 80), Image.Resampling.LANCZOS)
             else:
                 logo_image = logo_image.resize((200, 80), Image.ANTIALIAS)
-
+  
             self.logo = ImageTk.PhotoImage(logo_image)
             tk.Label(root, image=self.logo).pack(pady=10)
 
@@ -111,6 +111,8 @@ class DataMergerApp:
                 return
 
             df2 = pd.read_excel(self.file2_path.get(), skiprows=1, dtype=str)
+            # 🚨 Remove colunas indesejadas que causam conflito
+            df2 = df2.drop(columns=[col for col in df2.columns if col.strip().lower() == 'employee id'], errors='ignore')
             if not {'Nome', 'Login'}.issubset(df2.columns):
                 messagebox.showerror("Erro", "Arquivo Excel deve conter 'Nome' e 'Login'")
                 return
