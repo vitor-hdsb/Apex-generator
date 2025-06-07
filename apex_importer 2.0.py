@@ -50,6 +50,37 @@ def gerar_pdf_termos(resultados, df1, caminho_saida_pdf):
 
     pdf.output(caminho_saida_pdf)
 
+def salvar_excel_sem_formatacao(df, caminho):
+    """Salva Excel sem qualquer formatação"""
+    from openpyxl.styles import Font, PatternFill, Border, Alignment
+    
+    # Converter todos os dados para string para evitar formatação automática
+    df_clean = df.astype(str)
+    
+    # Substituir 'nan' por string vazia
+    df_clean = df_clean.replace('nan', '')
+    
+    with pd.ExcelWriter(caminho, engine='openpyxl') as writer:
+        df_clean.to_excel(writer, index=False, sheet_name='Sheet1')
+        
+        # Acessar workbook e worksheet
+        workbook = writer.book
+        worksheet = writer.sheets['Sheet1']
+        
+        # Aplicar formatação padrão simples
+        default_font = Font(name='Calibri', size=11)
+        default_fill = PatternFill()
+        default_border = Border()
+        default_alignment = Alignment()
+        
+        for row in worksheet.iter_rows():
+            for cell in row:
+                cell.font = default_font
+                cell.fill = default_fill
+                cell.border = default_border
+                cell.alignment = default_alignment
+                cell.number_format = '@'  # Formato texto
+
 class DataMergerApp:
     def __init__(self, root):
         self.root = root
@@ -203,19 +234,19 @@ class DataMergerApp:
 
             result = result.rename(columns={'Badge ID': 'Badge #'})
 
-            result['Language'] = 'English'
-            result['Active'] = 'Y'
+            result['Language'] = 'ENGLISH'
+            result['Active*'] = 'Y'
             result['Reporting Group'] = 'Associados'
-            result['User group 2'] = ''
-            result['User group 3'] = ''
-            result['User group 4'] = ''
-            result['User group 5'] = ''
+            result['User Group 2'] = ''
+            result['User Group 3'] = ''
+            result['User Group 4'] = ''
+            result['User Group 5'] = ''
             result['Expiration Date'] = ''
 
             result = result[
-                ['Employee ID', 'First Name', 'Last Name', 'Badge #', 
-                 'Language', 'Active', 'Reporting Group', 
-                 'User group 2', 'User group 3', 'User group 4', 'User group 5', 'Expiration Date']
+                ['Employee ID*', 'First Name*', 'Last Name*', 'Badge #', 
+                'Language', 'Active*', 'Reporting Group', 
+                'User Group 2', 'User Group 3', 'User Group 4', 'User Group 5', 'Expiration Date']
             ]
 
             save_path = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx")], initialfile=f"planilha_completa_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx")
@@ -223,12 +254,13 @@ class DataMergerApp:
                 messagebox.showwarning("Aviso", "Arquivo não foi salvo.")
                 return
 
-            result.to_excel(save_path, index=False)
+            # Usar função sem formatação
+            salvar_excel_sem_formatacao(result, save_path)
 
             erros = merged[merged['Badge ID'].isna()]
             if not erros.empty:
                 error_path = os.path.splitext(save_path)[0] + "_erros.xlsx"
-                erros.to_excel(error_path, index=False)
+                salvar_excel_sem_formatacao(erros, error_path)
 
             pdf_path = os.path.splitext(save_path)[0] + "_termos.pdf"
             gerar_pdf_termos(result, df1, pdf_path)
@@ -239,7 +271,7 @@ class DataMergerApp:
                 'Desc': ''
             })
             instance_path = os.path.splitext(save_path)[0] + "_Instances.xlsx"
-            instance_df.to_excel(instance_path, index=False)
+            salvar_excel_sem_formatacao(instance_df, instance_path)
 
             messagebox.showinfo(
                 "Concluído",
@@ -308,7 +340,7 @@ class DataMergerApp:
                 })
                 
                 # Adicionar colunas padrão para novos usuários
-                df_novos['Language'] = 'English'
+                df_novos['Language'] = 'ENGLISH'
                 df_novos['Active*'] = 'Y'
                 df_novos['Reporting Group'] = 'Associados'
                 df_novos['User Group 2'] = ''
@@ -357,7 +389,8 @@ class DataMergerApp:
                 messagebox.showwarning("Aviso", "Arquivo não foi salvo.")
                 return
 
-            result_df.to_excel(save_path, index=False)
+            # Usar função sem formatação
+            salvar_excel_sem_formatacao(result_df, save_path)
 
             # Gerar relatório de mudanças
             total_registros = len(result_df)
