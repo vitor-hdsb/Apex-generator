@@ -20,7 +20,6 @@ def gerar_pdf_termos(resultados, df1, caminho_saida_pdf):
     pdf.set_auto_page_break(auto=True, margin=15)
     
     for _, row in resultados.iterrows():
-        # Ajustado para usar os nomes corretos das colunas
         nome = f"{row['First Name*']} {row['Last Name*']}"
         employee_id = row['Employee ID*']
         data_atual = datetime.now().strftime('%d/%m/%Y')
@@ -55,20 +54,16 @@ def salvar_excel_sem_formatacao(df, caminho):
     """Salva Excel sem qualquer formatação"""
     from openpyxl.styles import Font, PatternFill, Border, Alignment
     
-    # Converter todos os dados para string para evitar formatação automática
+    # Converter todos os dados para string
     df_clean = df.astype(str)
-    
-    # Substituir 'nan' por string vazia
     df_clean = df_clean.replace('nan', '')
     
     with pd.ExcelWriter(caminho, engine='openpyxl') as writer:
         df_clean.to_excel(writer, index=False, sheet_name='Sheet1')
         
-        # Acessar workbook e worksheet
         workbook = writer.book
         worksheet = writer.sheets['Sheet1']
         
-        # Aplicar formatação padrão simples
         default_font = Font(name='Calibri', size=11)
         default_fill = PatternFill()
         default_border = Border()
@@ -80,7 +75,7 @@ def salvar_excel_sem_formatacao(df, caminho):
                 cell.fill = default_fill
                 cell.border = default_border
                 cell.alignment = default_alignment
-                cell.number_format = '@'  # Formato texto
+                cell.number_format = '@' 
 
 class DataMergerApp:
     def __init__(self, root):
@@ -88,23 +83,17 @@ class DataMergerApp:
         self.root.title("Amazon WHS - Apex Importer")
         self.root.geometry("550x650")
 
-        # Criar notebook para abas
         self.notebook = ttk.Notebook(root)
         self.notebook.pack(fill="both", expand=True, padx=10, pady=10)
 
-        # Aba 1: Geração Original
         self.tab1 = ttk.Frame(self.notebook)
         self.notebook.add(self.tab1, text="Apex Generator")
 
-        # Aba 2: Atualização da Base
         self.tab2 = ttk.Frame(self.notebook)
         self.notebook.add(self.tab2, text="Atualização da Base")
 
-        # Variáveis para Aba 1 (Original)
         self.file1_path = tk.StringVar()
         self.file2_path = tk.StringVar()
-
-        # Variáveis para Aba 2 (Atualização)
         self.csv_current_path = tk.StringVar()
         self.xlsx_apex_base_path = tk.StringVar()
 
@@ -115,53 +104,41 @@ class DataMergerApp:
     def load_logo(self):
         try:
             logo_path = r"C:\Users\vitor\Desktop\Apex-generator\image.png"
-
             if not os.path.exists(logo_path):
-                raise FileNotFoundError(f"Logo não encontrada em: {logo_path}")
+                logo_path = "image.png"
 
-            logo_image = Image.open(logo_path)
-
-            if hasattr(Image, 'Resampling'):
-                logo_image = logo_image.resize((200, 80), Image.Resampling.LANCZOS)
+            if os.path.exists(logo_path):
+                logo_image = Image.open(logo_path)
+                if hasattr(Image, 'Resampling'):
+                    logo_image = logo_image.resize((200, 80), Image.Resampling.LANCZOS)
+                else:
+                    logo_image = logo_image.resize((200, 80), Image.ANTIALIAS)
+                self.logo = ImageTk.PhotoImage(logo_image)
+                tk.Label(self.tab1, image=self.logo).pack(pady=10)
+                tk.Label(self.tab2, image=self.logo).pack(pady=10)
             else:
-                logo_image = logo_image.resize((200, 80), Image.ANTIALIAS)
-  
-            self.logo = ImageTk.PhotoImage(logo_image)
-            
-            # Adicionar logo nas duas abas
-            tk.Label(self.tab1, image=self.logo).pack(pady=10)
-            tk.Label(self.tab2, image=self.logo).pack(pady=10)
-
+                tk.Label(self.tab1, text="[Amazon WHS]").pack(pady=10)
+                tk.Label(self.tab2, text="[Amazon WHS]").pack(pady=10)
         except Exception as e:
-            print("Erro ao carregar logo:", str(e))
+            print("Erro logo:", str(e))
             tk.Label(self.tab1, text="[Logo não carregada]").pack()
             tk.Label(self.tab2, text="[Logo não carregada]").pack()
 
     def setup_tab1(self):
-        """Configurar a aba original (Apex Generator)"""
-        # Título
         tk.Label(self.tab1, text="Geração de Arquivos Apex", font=("Arial", 14, "bold")).pack(pady=10)
-
-        # Arquivo RFID
         tk.Label(self.tab1, text="Arquivo RFID (CSV):").pack()
         tk.Entry(self.tab1, textvariable=self.file1_path, width=60).pack()
         tk.Button(self.tab1, text="Selecionar arquivo", command=self.load_file1).pack(pady=5)
 
-        # Planilha Associados
         tk.Label(self.tab1, text="Planilha Associados (XLSX):").pack()
         tk.Entry(self.tab1, textvariable=self.file2_path, width=60).pack()
         tk.Button(self.tab1, text="Selecionar arquivo", command=self.load_file2).pack(pady=5)
 
-        # Botão processar
         tk.Button(self.tab1, text="Mesclar dados", command=self.process_data, 
                  bg="#0077cc", fg="white", font=("Arial", 10, "bold")).pack(pady=20)
 
     def setup_tab2(self):
-        """Configurar a nova aba de atualização"""
-        # Título
         tk.Label(self.tab2, text="Atualização da Base Apex", font=("Arial", 14, "bold")).pack(pady=10)
-
-        # Instruções
         instruction_text = (
             "Esta função atualiza a base do Apex comparando:\n"
             "• Arquivo CSV atual com funcionários ativos\n"
@@ -171,69 +148,62 @@ class DataMergerApp:
         tk.Label(self.tab2, text=instruction_text, justify="left", 
                 font=("Arial", 9), wraplength=500).pack(pady=10)
 
-        # Arquivo CSV Atual
         tk.Label(self.tab2, text="Arquivo CSV Atual (Funcionários Ativos):").pack()
         tk.Entry(self.tab2, textvariable=self.csv_current_path, width=60).pack()
         tk.Button(self.tab2, text="Selecionar CSV", command=self.load_csv_current).pack(pady=5)
 
-        # Base Apex
         tk.Label(self.tab2, text="Base de Dados Apex (XLSX):").pack()
         tk.Entry(self.tab2, textvariable=self.xlsx_apex_base_path, width=60).pack()
         tk.Button(self.tab2, text="Selecionar Base Apex", command=self.load_xlsx_apex_base).pack(pady=5)
 
-        # Botão processar
         tk.Button(self.tab2, text="Atualizar Base", command=self.update_apex_base, 
                  bg="#00AA44", fg="white", font=("Arial", 10, "bold")).pack(pady=20)
 
-    # Métodos da Aba 1 (Original)
     def load_file1(self):
         path = filedialog.askopenfilename(filetypes=[["CSV Files", "*.csv"]])
-        if path:
-            self.file1_path.set(path)
+        if path: self.file1_path.set(path)
 
     def load_file2(self):
         path = filedialog.askopenfilename(filetypes=[["Excel Files", "*.xlsx"]])
-        if path:
-            self.file2_path.set(path)
+        if path: self.file2_path.set(path)
 
-    # Métodos da Aba 2 (Atualização)
     def load_csv_current(self):
         path = filedialog.askopenfilename(filetypes=[["CSV Files", "*.csv"]])
-        if path:
-            self.csv_current_path.set(path)
+        if path: self.csv_current_path.set(path)
 
     def load_xlsx_apex_base(self):
         path = filedialog.askopenfilename(filetypes=[["Excel Files", "*.xlsx"]])
-        if path:
-            self.xlsx_apex_base_path.set(path)
+        if path: self.xlsx_apex_base_path.set(path)
 
     def process_data(self):
-        """Processo original da Aba 1"""
         try:
-            with open(self.file1_path.get(), 'r') as file:
+            # Lê o CSV com codificação UTF-8-SIG para evitar erros de charmap
+            with open(self.file1_path.get(), 'r', encoding='utf-8-sig') as file:
                 content = file.readlines()
                 delimiter = ',' if ',' in content[0] else ';'
 
-            df1 = pd.read_csv(self.file1_path.get(), delimiter=delimiter, dtype=str)
+            df1 = pd.read_csv(self.file1_path.get(), delimiter=delimiter, dtype=str, encoding='utf-8-sig')
+            
             if not {'Employee ID', 'Badge ID', 'Login'}.issubset(df1.columns):
                 messagebox.showerror("Erro", "Arquivo CSV deve conter 'Employee ID', 'Badge ID' e 'Login'")
                 return
 
             df2 = pd.read_excel(self.file2_path.get(), skiprows=1, dtype=str)
-            df2 = df2.drop(columns=[col for col in df2.columns if col.strip().lower() == 'employee id'], errors='ignore')
+            
+            # CORREÇÃO AQUI: Adicionado str(col) para evitar erro com colunas numéricas
+            df2 = df2.drop(columns=[col for col in df2.columns if str(col).strip().lower() == 'employee id'], errors='ignore')
+            
             if not {'Nome', 'Login'}.issubset(df2.columns):
                 messagebox.showerror("Erro", "Arquivo Excel deve conter 'Nome' e 'Login'")
                 return
 
             df2 = df2.dropna(subset=['Nome'])
-
             df2[['First Name', 'Last Name']] = df2['Nome'].str.split(' ', n=1, expand=True)
             df2['Last Name'].fillna('', inplace=True)
 
             merged = pd.merge(df2, df1[['Login', 'Employee ID', 'Badge ID']], on='Login', how='left')
             result = merged[['First Name', 'Last Name', 'Employee ID', 'Badge ID']].copy()
 
-            # Renomear colunas com asteriscos
             result = result.rename(columns={
                 'Employee ID': 'Employee ID*',
                 'First Name': 'First Name*',
@@ -261,12 +231,10 @@ class DataMergerApp:
                 messagebox.showwarning("Aviso", "Arquivo não foi salvo.")
                 return
 
-            # Usar função sem formatação
             salvar_excel_sem_formatacao(result, save_path)
 
             erros = merged[merged['Badge ID'].isna()].copy()
             if not erros.empty:
-                # Renomear colunas dos erros também
                 erros = erros.rename(columns={
                     'Employee ID': 'Employee ID*',
                     'First Name': 'First Name*',
@@ -287,37 +255,28 @@ class DataMergerApp:
             instance_path = os.path.splitext(save_path)[0] + "_Instances.xlsx"
             salvar_excel_sem_formatacao(instance_df, instance_path)
 
-            messagebox.showinfo(
-                "Concluído",
-                f"Arquivo Excel salvo em:\n{save_path}\n\n"
-                f"Arquivo Instances salvo em:\n{instance_path}\n\n"
-                f"Termo de consentimento salvo em:\n{pdf_path}"
-            )
+            messagebox.showinfo("Concluído", f"Arquivos salvos com sucesso!")
 
         except Exception as e:
             messagebox.showerror("Erro", str(e))
 
     def update_apex_base(self):
-        """Novo processo da Aba 2 - Atualização da Base"""
         try:
-            # Validar se os arquivos foram selecionados
             if not self.csv_current_path.get() or not self.xlsx_apex_base_path.get():
                 messagebox.showerror("Erro", "Selecione ambos os arquivos!")
                 return
 
-            # Carregar CSV atual (funcionários ativos)
-            with open(self.csv_current_path.get(), 'r') as file:
+            # CORREÇÃO: Encoding UTF-8-SIG também aqui
+            with open(self.csv_current_path.get(), 'r', encoding='utf-8-sig') as file:
                 content = file.readlines()
                 delimiter = ',' if ',' in content[0] else ';'
 
-            df_csv_current = pd.read_csv(self.csv_current_path.get(), delimiter=delimiter, dtype=str)
+            df_csv_current = pd.read_csv(self.csv_current_path.get(), delimiter=delimiter, dtype=str, encoding='utf-8-sig')
             
-            # Verificar se tem as colunas necessárias no CSV
             if 'Employee ID' not in df_csv_current.columns:
                 messagebox.showerror("Erro", "CSV deve conter 'Employee ID'")
                 return
                 
-            # Verificar e processar nomes
             if 'First Name' not in df_csv_current.columns or 'Last Name' not in df_csv_current.columns:
                 if 'Nome' in df_csv_current.columns:
                     df_csv_current[['First Name', 'Last Name']] = df_csv_current['Nome'].str.split(' ', n=1, expand=True)
@@ -326,145 +285,84 @@ class DataMergerApp:
                     messagebox.showerror("Erro", "CSV deve conter 'First Name' e 'Last Name' ou 'Nome'")
                     return
 
-            # Verificar Badge ID/Badge #
-            if 'Badge ID' not in df_csv_current.columns and 'Badge #' not in df_csv_current.columns:
-                messagebox.showerror("Erro", "CSV deve conter 'Badge ID' ou 'Badge #'")
-                return
-
-            # Padronizar nome da coluna Badge
             if 'Badge ID' in df_csv_current.columns:
                 df_csv_current = df_csv_current.rename(columns={'Badge ID': 'Badge #'})
 
-            # Carregar base do Apex (XLSX)
             df_apex_base = pd.read_excel(self.xlsx_apex_base_path.get(), dtype=str)
             
-            # Verificar se a base tem as colunas necessárias (pode ter ou não asteriscos)
             employee_id_col = None
             first_name_col = None
             last_name_col = None
             badge_col = None
             active_col = None
 
-            # Identificar colunas independente dos asteriscos
             for col in df_apex_base.columns:
-                if 'employee id' in col.lower():
-                    employee_id_col = col
-                elif 'first name' in col.lower():
-                    first_name_col = col
-                elif 'last name' in col.lower():
-                    last_name_col = col
-                elif 'badge' in col.lower():
-                    badge_col = col
-                elif 'active' in col.lower():
-                    active_col = col
+                # CORREÇÃO: Convertido para str para evitar erro com int
+                col_str = str(col).lower()
+                if 'employee id' in col_str: employee_id_col = col
+                elif 'first name' in col_str: first_name_col = col
+                elif 'last name' in col_str: last_name_col = col
+                elif 'badge' in col_str: badge_col = col
+                elif 'active' in col_str: active_col = col
 
             if not all([employee_id_col, first_name_col, last_name_col, badge_col, active_col]):
-                messagebox.showerror("Erro", "Base Apex deve conter colunas de Employee ID, First Name, Last Name, Badge e Active")
+                messagebox.showerror("Erro", "Base Apex incompleta.")
                 return
 
-            # Padronizar nomes das colunas na base Apex (adicionar asteriscos se não tiver)
             column_mapping = {}
-            if employee_id_col != 'Employee ID*':
-                column_mapping[employee_id_col] = 'Employee ID*'
-            if first_name_col != 'First Name*':
-                column_mapping[first_name_col] = 'First Name*'
-            if last_name_col != 'Last Name*':
-                column_mapping[last_name_col] = 'Last Name*'
-            if badge_col != 'Badge #':
-                column_mapping[badge_col] = 'Badge #'
-            if active_col != 'Active*':
-                column_mapping[active_col] = 'Active*'
+            if employee_id_col != 'Employee ID*': column_mapping[employee_id_col] = 'Employee ID*'
+            if first_name_col != 'First Name*': column_mapping[first_name_col] = 'First Name*'
+            if last_name_col != 'Last Name*': column_mapping[last_name_col] = 'Last Name*'
+            if badge_col != 'Badge #': column_mapping[badge_col] = 'Badge #'
+            if active_col != 'Active*': column_mapping[active_col] = 'Active*'
 
             if column_mapping:
                 df_apex_base = df_apex_base.rename(columns=column_mapping)
 
-            # Criar DataFrame resultado baseado na estrutura da base Apex
             result_df = df_apex_base.copy()
 
-            # 1. Registros no CSV mas não na base Apex (NOVOS USUÁRIOS)
             csv_employee_ids = set(df_csv_current['Employee ID'].fillna('').astype(str))
             apex_employee_ids = set(df_apex_base['Employee ID*'].fillna('').astype(str))
 
             novos_usuarios = csv_employee_ids - apex_employee_ids
             
             if novos_usuarios:
-                # Filtrar novos usuários do CSV
                 df_novos = df_csv_current[df_csv_current['Employee ID'].isin(novos_usuarios)].copy()
-                
-                # Renomear colunas para corresponder ao formato Apex com asteriscos
-                df_novos = df_novos.rename(columns={
-                    'Employee ID': 'Employee ID*',
-                    'First Name': 'First Name*',
-                    'Last Name': 'Last Name*'
-                })
-                
-                # Adicionar colunas padrão para novos usuários
+                df_novos = df_novos.rename(columns={'Employee ID': 'Employee ID*', 'First Name': 'First Name*', 'Last Name': 'Last Name*'})
                 df_novos['Language'] = 'ENGLISH'
                 df_novos['Active*'] = 'Y'
                 df_novos['Reporting Group'] = 'Associados'
-                df_novos['User Group 2'] = ''
-                df_novos['User Group 3'] = ''
-                df_novos['User Group 4'] = ''
-                df_novos['User Group 5'] = ''
-                df_novos['Expiration Date'] = ''
-
-                # Garantir que todas as colunas da base original existam
-                for col in result_df.columns:
-                    if col not in df_novos.columns:
-                        df_novos[col] = ''
-
-                # Reordenar colunas para corresponder à base original
-                df_novos = df_novos[result_df.columns]
                 
-                # Adicionar novos usuários ao resultado
+                for col in result_df.columns:
+                    if col not in df_novos.columns: df_novos[col] = ''
+                df_novos = df_novos[result_df.columns]
                 result_df = pd.concat([result_df, df_novos], ignore_index=True)
 
-            # 2. Registros não no CSV mas na base Apex (DESATIVAR)
             usuarios_desativar = apex_employee_ids - csv_employee_ids
             if usuarios_desativar:
                 result_df.loc[result_df['Employee ID*'].isin(usuarios_desativar), 'Active*'] = 'N'
 
-            # 3. Registros no CSV e na base Apex mas inativos (REATIVAR)
             usuarios_comuns = csv_employee_ids & apex_employee_ids
+            reativados_count = 0
             if usuarios_comuns:
                 mask_reativar = (result_df['Employee ID*'].isin(usuarios_comuns)) & (result_df['Active*'] == 'N')
                 result_df.loc[mask_reativar, 'Active*'] = 'Y'
                 reativados_count = mask_reativar.sum()
-            else:
-                reativados_count = 0
 
-            # Remover duplicatas baseadas em Employee ID*
             result_df = result_df.drop_duplicates(subset=['Employee ID*'], keep='last')
 
-            # Salvar resultado
-            save_path = filedialog.asksaveasfilename(
-                defaultextension=".xlsx", 
-                filetypes=[("Excel files", "*.xlsx")], 
-                initialfile=f"apex_base_atualizada_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
-            )
+            save_path = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx")], initialfile=f"apex_base_atualizada_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx")
             
-            if not save_path:
-                messagebox.showwarning("Aviso", "Arquivo não foi salvo.")
-                return
+            if not save_path: return
 
-            # Usar função sem formatação
             salvar_excel_sem_formatacao(result_df, save_path)
 
-            # Gerar relatório de mudanças
             total_registros = len(result_df)
             novos_count = len(novos_usuarios) if novos_usuarios else 0
             desativados_count = len(usuarios_desativar) if usuarios_desativar else 0
 
-            messagebox.showinfo(
-                "Atualização Concluída",
-                f"Base do Apex atualizada com sucesso!\n\n"
-                f"Arquivo salvo em:\n{save_path}\n\n"
-                f"Resumo das alterações:\n"
-                f"• Total de registros: {total_registros}\n"
-                f"• Novos usuários: {novos_count}\n"
-                f"• Usuários desativados: {desativados_count}\n"
-                f"• Usuários reativados: {reativados_count}"
-            )
+            messagebox.showinfo("Atualização Concluída", 
+                f"Resumo:\nTotal: {total_registros}\nNovos: {novos_count}\nDesativados: {desativados_count}\nReativados: {reativados_count}")
 
         except Exception as e:
             messagebox.showerror("Erro", f"Erro no processamento: {str(e)}")
@@ -472,20 +370,7 @@ class DataMergerApp:
 if __name__ == "__main__":
     root = tk.Tk()
     root.withdraw()
-
-    messagebox.showinfo(
-        "Instruções - Amazon WHS Apex Importer",
-        "🔹 ABA APEX GENERATOR:\n"
-        "1. Selecione o arquivo CSV com 'Employee ID', 'Badge ID' e 'Login'\n"
-        "2. Selecione a planilha Excel com 'Nome' e 'Login'\n"
-        "3. Clique em 'Mesclar dados' para gerar os arquivos\n\n"
-        "🔹 ABA ATUALIZAÇÃO DA BASE:\n"
-        "1. Selecione o CSV atual com funcionários ativos\n"
-        "2. Selecione a base de dados atual do Apex (XLSX)\n"
-        "3. Clique em 'Atualizar Base' para sincronizar\n\n"
-        "OBS: A planilha Excel deve ter cabeçalho na linha 2."
-    )
-    
+    messagebox.showinfo("Instruções", "Selecione os arquivos conforme solicitado nas abas.")
     root.deiconify()
     app = DataMergerApp(root)
     root.mainloop()
